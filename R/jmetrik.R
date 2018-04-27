@@ -15,7 +15,6 @@
 #' @name jmetrik
 NULL
 
-
 #' Writes a file in *.jmetrik format. 
 #' 
 #' 'jMetrik' is a stand alone program written in Java. It defines a file format that is just a plain text
@@ -24,6 +23,8 @@ NULL
 #' meta information about the data such as the number of rows. This function will create a *.jmetrik
 #' file from a data frame. The jMetrik program and other informaiton is available at
 #' \url{http://www.Itemanalysis.com}
+#' 
+#' @importFrom utils write.table
 #' 
 #' @param x A data frame
 #' @param fileName The complete path and name of the file to be written. The file siffix must be .jmetrik.
@@ -38,10 +39,13 @@ NULL
 #'  each set of parentheses such that the first element in the code list corresponds to the first 
 #'  element in the score list.
 #'  
+#' @param group a character vector of codes that define the group membership of an item. One 
+#'  element for eahc item.
+#'  
 #' @param labels An optional character vector of variable labels
 #' @author J. Patrick Meyer \email{support@@itemanalysis.com}
 #' @examples
-#' \dontrun{
+#' \donttest{
 #'
 #' #Create some data
 #' id<-100+seq(1:10)
@@ -72,13 +76,16 @@ NULL
 #' labels<-c("ID variable", "Test item 1", "Test item 2", "Test item 3", "Test score")
 #' 
 #' #write the file
-#' jmetrikWrite(x=exdata, fileName="./test-write.jmetrik",
-#'             codes=codes, scoring=scoring, labels=labels)
+#' jmetrikWrite(x=exdata, 
+#'              fileName=file.path(tempdir(), "test-write.jmetrik"),
+#'              codes=codes, 
+#'              scoring=scoring, 
+#'              labels=labels)
 #'             
 #' }
 #' 
 #' @export    
-jmetrikWrite<-function(x, fileName, scoring=NULL, codes=NULL, labels=NULL){
+jmetrikWrite<-function(x, fileName, scoring=NULL, codes=NULL, group=NULL, labels=NULL){
     if(!is.data.frame(x)) stop("x must be a data frame.")
     file.create(fileName)
     conn<-file(fileName, "w")
@@ -118,7 +125,14 @@ jmetrikWrite<-function(x, fileName, scoring=NULL, codes=NULL, labels=NULL){
         if(!is.null(codes) & length(codes)>1){
             mycodes<-paste("\"", codes[i], "\"", sep="")
         }else{
-            mycodes<-""
+            mycodes<-"(NA,OM,NR)(0.0,0.0,0.0)"
+        }
+        
+        #Group information
+        if(!is.null(group) & length(group)>1){
+          mygroup<-group[i]
+        }else{
+          mygroup<-""
         }
         
         #Variable labels
@@ -129,7 +143,7 @@ jmetrikWrite<-function(x, fileName, scoring=NULL, codes=NULL, labels=NULL){
         }
         
         #write line
-        cat(myname, mytype, myscoring, mycodes, mylabel, file=conn, sep=",")
+        cat(myname, mytype, myscoring, mycodes, mygroup, mylabel, file=conn, sep=",")
         cat("", file=conn, sep="\n")
     }
     
@@ -146,41 +160,46 @@ jmetrikWrite<-function(x, fileName, scoring=NULL, codes=NULL, labels=NULL){
 #' A *.jmetrik file can be created with \code{\link{jmetrikWrite}} or by the 'jMetrik' program. 
 #' See \url{http://www.ItemAnalysis.com}.
 #' 
+#' @importFrom utils read.csv
+#' 
 #' @param fileName The complete path and file name of the *.jmetrik file that is being read.
+#' @param maxScan The maximum number of rows to scan. This number should be at least the number
+#' of variables int eh data file.
 #' @return a data frame
 #' @examples
-#' \dontrun{
-#' x<-jmetrikRead(fileName="./myfile.jmetrik")
+#' \donttest{
+#' x<-jmetrikRead(fileName=system.file("extdata", "exam1iparam.jmetrik", package = "jmetrik"))
 #' }
 #' 
 #' @export
-jmetrikRead<-function(fileName){
-    conn<-file(fileName)
+jmetrikRead<-function(fileName, maxScan=500){
+    
     firstRow<-0
     variableAttributes<-FALSE
-    scanning<-TRUE
     vname<-vector(mode = "character", length = 0)
-    i<-1
+    index<-1
     
-    while(length(oneLine <- readLines(conn, n = 1, warn = FALSE)) > 0 & scanning){
-        if("# ATTRIBUTES"==oneLine){
-            variableAttributes<-TRUE            
-        }else if("# DATA"==oneLine){
-            scanning<-FALSE
-            variableAttributes<-FALSE
-        }
-        
-        if(variableAttributes==TRUE){
-            myVector<-(strsplit(oneLine, ","))
-            vname[i]<-myVector[1]
-            #TODO get other attributes here
-        }
+    scanning<-TRUE
+    conn<-file(fileName)
+    line<-readLines(conn, n=maxScan)
     
-        firstRow<-firstRow+1
-    }#end while
+    for(i in 1:length(line)){
+      if("# ATTRIBUTES"==line[i]){
+          variableAttributes<-TRUE
+      }else if("# DATA"==line[i]){
+          break
+      }
+
+      if(variableAttributes==TRUE & "# ATTRIBUTES"!=line[i]){
+          myVector<-unlist(strsplit(line[i], ","))
+          vname[index]<-myVector[1]
+          index<-index+1
+      }
+      
+      firstRow<-firstRow+1
+    }
     close(conn)
     
-    
-    (x<-read.csv(file=fileName, col.names=vname, skip=firstRow))
+    (x<-read.csv(file=fileName, col.names=vname, skip=firstRow+1, header=FALSE))
 }
 

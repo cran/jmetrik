@@ -1,6 +1,7 @@
-c1a3e4053f91b0b582653075f476c266 *DESCRIPTION
-0a6fc82033195a400e5504c8eb789ac0 *NAMESPACE
-1f01a84a943e8e53684e06bd93f2b4c0 *R/jmetrik.R
-e9c9b3cce258344d4971a68000ca6850 *man/jmetrik.Rd
-7b767f9ad500a5963956f8cee2520d5f *man/jmetrikRead.Rd
-4fc280025086ab88e2060a89eae7a4c8 *man/jmetrikWrite.Rd
+075b5b2edb2f2af5da8728171eadc185 *DESCRIPTION
+5b573390172c1df1435840b552c99b53 *NAMESPACE
+851c16920b99eff23e3e281264d3b627 *R/jmetrik.R
+e5ac042e138d2f19c6c18db8fc056b2f *inst/extdata/exam1iparam.jmetrik
+96d2d9fe61fe95ab2ac5b1ad89977a87 *man/jmetrik.Rd
+b5ab6751ea260394019d5a5387da3cbe *man/jmetrikRead.Rd
+5173773eb0d61f7341aa06bf447b8603 *man/jmetrikWrite.Rd
